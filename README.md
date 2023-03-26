@@ -46,3 +46,10 @@ s.get_data_loader(False)
 valid_dataloader = s.data_loader
 len(s.data_loader), len(s.data_loader.dataset)
 ```
+3. tran
+```
+o = TrainLSTM(True)
+o.update_pramas(input_size = 26, num_epochs=35)
+o.train(train_dataloader, valid_dataloader)
+o.save_model('model_name.pt', o.model)
+```
