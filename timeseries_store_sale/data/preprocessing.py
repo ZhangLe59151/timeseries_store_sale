@@ -45,19 +45,26 @@ class PreprocessData:
     def prepare_dataframe(self, data_path=None):
         if data_path:
             self.update_param(data_path=data_path)
+        # main 
         df = self.load_data(self.data_path['main'])
         self.family_dict = self.get_unique_dict(df, 'family')
         df['family'] = df['family'].apply(lambda x: self.family_dict[x])
-        self.store_arr = df['store_nbr'].unique()
+        arr = df['store_nbr'].unique()
+        mask = np.isnan(arr)
+        self.store_arr = arr[~mask]
         self.family_arr = df['family'].unique()
         self.raw_df['main'] = df
+        # oil
         df = self.load_data(self.data_path['oil'], self.index_column)
         self.raw_df['oil'] = df
+        # holiday
         df = self.load_data(self.data_path['holiday'], self.index_column)
         self.raw_df['holiday'] = df
         arr_1 = df.locale_name.unique()
+        # transaction
         df = self.load_data(self.data_path['transaction'], self.index_column)
         self.raw_df['transaction'] = df
+        # store
         df = self.load_data(self.data_path['store'])
         self.raw_df['store'] = df
         arr_2 = df.city.unique()
@@ -69,6 +76,7 @@ class PreprocessData:
         self.state_dict = self.get_unique_dict(df, 'state')
         self.store_type_dict = df.set_index('store_nbr')['type'].to_dict()
         self.store_cluster = df.set_index('store_nbr')['cluster'].to_dict()
+        return self.raw_df
 
     
     def get_time_features(self, df):
@@ -84,22 +92,22 @@ class PreprocessData:
         df = df.reindex(columns=column_order)
         return df
     
-    def time_sequence_data(self, store_id=None, family_id=None):
-        data = self.raw_df['main']
+    def time_sequence_data(self, store_id=None, family_id=None, raw_df={}):
+        data = raw_df['main']
         df = data[(data['store_nbr'] == store_id) & (data['family'] == family_id)]
         df[self.index_column] = pd.to_datetime(df[self.index_column])
         df = self.get_time_features(df)
         df.set_index(self.index_column, inplace=True)
         # add transcatioin information
-        df_t = self.raw_df['transaction']
+        df_t = raw_df['transaction']
         df['transactions'] = df_t[df_t['store_nbr'] == store_id]['transactions']
         df.fillna(0)
         # add oil price information
-        df_oil = self.raw_df['oil']
+        df_oil = raw_df['oil']
         df = df.merge(df_oil['dcoilwtico'], left_on=self.index_column, right_on=self.index_column, how='left')
         df = df.fillna(0)
         # add dummies of type of holiday
-        df_h = self.raw_df['holiday']
+        df_h = raw_df['holiday']
         df_h_type = pd.get_dummies(df_h.type)
         df = df.merge(df_h_type, left_on=self.index_column, right_on=self.index_column, how='left')
         # add dummies of type of holiday

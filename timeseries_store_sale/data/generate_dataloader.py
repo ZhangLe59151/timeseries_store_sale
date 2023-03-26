@@ -65,10 +65,10 @@ class TimeSeriesDataLoader:
         self.ds_arr = []
         self.ds = None
         self.subsize = 100
-        self.data_path = None
         self.data_loader = None
         self.store_arr = None
         self.family_arr = None
+        self.data_path = None
     
     def update_param(self, **kwargs):
         self.n_in = kwargs.get('n_in', self.n_in)
@@ -76,22 +76,25 @@ class TimeSeriesDataLoader:
         self.subsize = kwargs.get('subsize', self.subsize)
         self.store_arr = kwargs.get('store_arr', self.store_arr)
         self.family_arr = kwargs.get('family_arr', self.family_arr)
+        self.data_path = kwargs.get('data_path', self.data_path)
     
-    def get_datasets(self, start_date, end_data, data_path=None):
+    def prepare_data(self):
         o = PreprocessData()
-        self.data_path = o.data_path
-        o.prepare_dataframe(data_path = data_path or self.data_path)
-        self.ds_arr = []
+        self.row_data = o.prepare_dataframe(self.data_path or o.data_path)
         if self.store_arr is None:
             self.store_arr = o.store_arr
         if self.family_arr is None:
             self.family_arr = o.family_arr
-        print(self.store_arr)
-        print(self.family_arr)
+    
+    def get_datasets(self, start_date, end_data):
+        o = PreprocessData()
+        self.row_data = o.prepare_dataframe(self.data_path)
+        self.ds_arr = []
+        self.ds = None
         for i in self.store_arr:
             for j in self.family_arr:
                 ds = TimeSeriesDataset(
-                    o.time_sequence_data(i, j),
+                    o.time_sequence_data(i, j, self.row_data),
                     o.index_column, 
                     self.n_in, 
                     self.n_out,

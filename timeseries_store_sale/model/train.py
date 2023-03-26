@@ -92,7 +92,12 @@ class TrainLSTM:
                     )
         if self.debug:
             print('--------------end train-------------')
-        self.mdoel = model
+        self.model = model
     
     def get_train_loss(self):
         return self.train_loss, self.valid_loss
+    
+    def save_model(self, model_path, model = None):
+        self.model = model or self.model
+        torch.save(self.model.state_dict(), model_path)
+        return model_path
