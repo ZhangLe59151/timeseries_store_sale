@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="timeseries_store_sale",
-    version="0.1.41",
+    version="0.1.50",
     author="ZhangLe",
     author_email="zhanglenlp@gmail.com",
     description="time series model for training sequence dataset",

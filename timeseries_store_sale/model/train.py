@@ -60,8 +60,9 @@ class TrainLSTM:
             start_time = time.time()
             loss_0 = 0.0
             num_samples = 0.0
+            model.train()
             for i, (inputs, labels) in enumerate(train_dataloader):
-                model.train()
+                # model.train()
                 optimizer.zero_grad()
                 output = model(inputs)
                 loss = criterion(output, labels.squeeze())
@@ -72,8 +73,9 @@ class TrainLSTM:
             self.train_loss.append(loss_0/num_samples)
             loss_1 = 0.0
             num_samples = 0.0
+            model.eval()
             for i, (inputs, labels) in enumerate(valid_dataloader):
-                model.eval()
+                # model.eval()
                 output = model(inputs)
                 loss = criterion(output, labels.squeeze())
                 loss_1 += loss.item() * len(inputs)
@@ -101,3 +103,14 @@ class TrainLSTM:
         self.model = model or self.model
         torch.save(self.model.state_dict(), model_path)
         return model_path
+    
+    def predict(self, predict_dataloader, model=None):
+        self.model = model or self.model
+        self.model.eval()
+        predict_result = None
+        for i, (inputs) in enumerate(predict_dataloader):
+            output = model(inputs)
+            print(output)
+            predict_result = output
+        return predict_result
+        

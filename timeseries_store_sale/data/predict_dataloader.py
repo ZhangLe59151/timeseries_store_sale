@@ -8,7 +8,6 @@ class TimeSeriesDataset(Dataset):
                  df,
                  date_column,
                  input_steps,
-                 output_steps,
                  start_date=None,
                  end_date=None,
                  normalize=False,
@@ -17,7 +16,6 @@ class TimeSeriesDataset(Dataset):
         self.data = df
         self.date_column = date_column
         self.input_steps = input_steps
-        self.output_steps = output_steps
         self.start_date = start_date
         self.end_date = end_date
         self.normalize = normalize
@@ -27,9 +25,6 @@ class TimeSeriesDataset(Dataset):
         # Filter data by date range
         if start_date is not None and end_date is not None:
             self.data = self.data[(self.data[self.date_column] >= start_date) & (self.data[self.date_column] <= end_date)]
-
-        # Compute max index for input/output sequences
-        self.max_input_index = len(self.data) - input_steps - output_steps
 
         # drop the date column
         self.data = self.data.drop(columns = [self.date_column])
@@ -46,20 +41,17 @@ class TimeSeriesDataset(Dataset):
     def __getitem__(self, idx):
         # Get input and output sequences
         input_seq = self.data.iloc[idx:idx+self.input_steps, :].values.astype('float32')
-        output_seq = self.data.iloc[idx+self.input_steps:idx+self.input_steps+self.output_steps, -1:].values.astype('float32')
-
+        
         # Convert sequences to PyTorch tensors
         input_seq = torch.from_numpy(input_seq)  # Add batch dimension
-        output_seq = torch.from_numpy(output_seq)  # Add batch dimension
+        
+        return input_seq
 
-        return input_seq, output_seq
-    
 
 class TimeSeriesDataLoader:
     def __init__(self):
         self.data_loader = {}
         self.n_in = 30
-        self.n_out = 15
         self.batch_size = 128
         self.ds_arr = []
         self.ds = None
@@ -71,7 +63,6 @@ class TimeSeriesDataLoader:
     
     def update_param(self, **kwargs):
         self.n_in = kwargs.get('n_in', self.n_in)
-        self.n_out = kwargs.get('n_out', self.n_out)
         self.subsize = kwargs.get('subsize', self.subsize)
         self.store_arr = kwargs.get('store_arr', self.store_arr)
         self.family_arr = kwargs.get('family_arr', self.family_arr)
@@ -95,8 +86,7 @@ class TimeSeriesDataLoader:
                 ds = TimeSeriesDataset(
                     o.time_sequence_data(i, j, self.row_data),
                     o.index_column, 
-                    self.n_in, 
-                    self.n_out,
+                    self.n_in,
                     start_date, 
                     end_data
                 )
@@ -106,5 +96,3 @@ class TimeSeriesDataLoader:
     def get_data_loader(self, shuffle=False):
         self.data_loader = DataLoader(self.ds, self.batch_size, shuffle)
         return self.data_loader
-        
-        
